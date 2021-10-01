@@ -18,14 +18,13 @@
  */
 #include "xbox360_joy_new_interface/xbox360_joy_new.h"
 #include <mav_msgs/default_topics.h>
-#include <trajectory_msgs/MultiDOFJointTrajectory.h>
 
 
 Joy::Joy() {
   ros::NodeHandle nh;
   ros::NodeHandle pnh("~");
   ctrl_pub_ = nh_.advertise<mav_msgs::RollPitchYawrateThrust> (mav_msgs::default_topics::COMMAND_ROLL_PITCH_YAWRATE_THRUST, 10);
-  trajectory_pub_ = nh.advertise<trajectory_msgs::MultiDOFJointTrajectory>(mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
+  trajectory_pub_ = nh.advertise<mav_msgs::CommandTrajectory>(mav_msgs::default_topics::COMMAND_TRAJECTORY, 10);
 
 //롤피치요쓰러스트 메세지 초기화
   control_msg_.roll = 0;
@@ -39,10 +38,10 @@ Joy::Joy() {
 
 //트라젝터리 메세지 포지션 x,y,z,yaw....요는 어케하냐....
 
-  point_.desired_position.x = 0.0;  //doouble형
-  point_.desired_position.y = 0.0;
-  point_.desired_position.z = 0.0;
-  point_.desired_yaw = 0.0;
+  trajectory_msg_.position.x = 0.0;  //doouble형
+  trajectory_msg_.position.y = 0.0;
+  trajectory_msg_.position.z = 0.0;
+  trajectory_msg_.yaw = 0.0;
 
   // for xbox360 mode2
   pnh.param("axis_roll_", axes_.roll, 2);
@@ -71,11 +70,6 @@ Joy::Joy() {
   pnh.param("button_takeoff_", buttons_.takeoff, 3);
   pnh.param("button_land_", buttons_.land, 0);
 
-  // Overwrite defaults if set as node parameters.
-  pnh.param("x", desired_position.x, 0);
-  pnh.param("y", desired_position.y, 0);
-  pnh.param("z", desired_position.z, 0);
-  pnh.param("yaw", desired_yaw, 0);
 
   namespace_ = nh_.getNamespace();
   joy_sub_ = nh_.subscribe("joy", 10, &Joy::JoyCallback, this);
@@ -99,10 +93,10 @@ void Joy::JoyCallback(const sensor_msgs::JoyConstPtr& msg) {
   control_msg_.thrust.z = (msg->axes[axes_.thrust] + 1) * max_.thrust / 2.0 * axes_.thrust_direction;
   control_msg_.yaw_rate = msg->axes[axes_.yaw] * max_.rate_yaw * axes_.yaw_direction;
 
-  point_.desired_position.x = 2.5*control_msg_.pitch;
-  point_.desired_position.y = 2.5*control_msg_.roll;	// ROS y axis pos to the left
-  point_.desired_position.z = 0.1*(msg->axes[axes_.thrust] * max_.thrust / 2.0 * axes_.thrust_direction);	
-  point_.desired_yaw = -control_msg_.yaw_rate;	
+  trajectory_msg_.position.x = 2.5*control_msg_.pitch;
+  trajectory_msg_.position.y = 2.5*control_msg_.roll;	// ROS y axis pos to the left
+  trajectory_msg_.position.z = 0.1*(msg->axes[axes_.thrust] * max_.thrust / 2.0 * axes_.thrust_direction);	
+  trajectory_msg_.yaw= -control_msg_.yaw_rate;	
 
 
 
